@@ -58,13 +58,13 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-fun CreateMaterialTimePickerCheckbox(shouldShowTimePicker: MutableState<Boolean>) {
+fun CreateMaterialTimePickerCheckbox(showTimePicker: MutableState<Boolean>) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
         Checkbox(
             modifier = Modifier.scale(scale = 1.6f),
-            checked = shouldShowTimePicker.value,
+            checked = showTimePicker.value,
             onCheckedChange = { isChecked ->
-                shouldShowTimePicker.value = isChecked
+                showTimePicker.value = isChecked
             }
         )
 
@@ -76,7 +76,7 @@ fun CreateMaterialTimePickerCheckbox(shouldShowTimePicker: MutableState<Boolean>
 }
 
 @Composable
-fun CreateMaterialTimePicker(shouldShowTimePicker: MutableState<Boolean>) {
+fun CreateMaterialTimePicker(showTimePicker: MutableState<Boolean>) {
     // Get the current Activity from the Composable
     val context: Context = LocalContext.current
     val activity = context as? AppCompatActivity
@@ -93,17 +93,17 @@ fun CreateMaterialTimePicker(shouldShowTimePicker: MutableState<Boolean>) {
             .setMinute(current.minute)
             .setTitleText("Time of the meeting")
             .build().apply {
-                addOnCancelListener { shouldShowTimePicker.value = false }
-                addOnDismissListener { shouldShowTimePicker.value = false }
+                addOnCancelListener { showTimePicker.value = false }
+                addOnDismissListener { showTimePicker.value = false }
                 addOnPositiveButtonClickListener {
                     Toast.makeText(
                         context,
                         "Selected time: $hour : $minute",
                         Toast.LENGTH_SHORT
                     ).show()
-                    shouldShowTimePicker.value = false
+                    showTimePicker.value = false
                 }
-                addOnNegativeButtonClickListener { shouldShowTimePicker.value = false }
+                addOnNegativeButtonClickListener { showTimePicker.value = false }
             }
             .show(activity.supportFragmentManager, FRAGMENT_TAG)
 
