@@ -1,32 +1,20 @@
 package com.example.examplematerialtimepicker
 
-import android.content.Context
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentManager
@@ -34,11 +22,13 @@ import com.example.examplematerialtimepicker.ui.theme.ExampleMaterialTimePickerT
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
 
 private val TAG = "MainActivity"
 private val TIME_FRAGMENT_TAG = "time_picker_frag"
@@ -105,8 +95,17 @@ fun AppContent(fragmentManager: FragmentManager) {
                         showDatePicker = newValue
                     }
                 )
-                Text("Selected Date: $selectedDate")
+                Text("Selected Date: ${selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}")
             }
+            ShowMaterialDatePicker(
+                showDatePicker = showDatePicker,
+                selectedDate = selectedDate,
+                onDateSelected = {
+                    selectedDate = it
+                    showDatePicker = false
+                },
+                fragmentManager = fragmentManager
+            )
 
     }
 }
@@ -161,6 +160,30 @@ fun ShowMaterialTimePicker(
         }
     }
 }
+
+@Composable
+fun ShowMaterialDatePicker(
+    showDatePicker: Boolean,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    fragmentManager: FragmentManager
+) {
+    if (showDatePicker) {
+
+        val datePicker = MaterialDatePicker.Builder.datePicker()
+            .setSelection(selectedDate.toEpochDay() * 24 * 60 * 60 * 1000)
+            .setTitleText("Select a Date")
+            .build()
+
+        datePicker.addOnPositiveButtonClickListener { millis ->
+            val selectedLocalDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+            onDateSelected(selectedLocalDate)
+        }
+
+        datePicker.show(fragmentManager, DATE_FRAGMENT_TAG)
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PickerCheckboxPreview() {
