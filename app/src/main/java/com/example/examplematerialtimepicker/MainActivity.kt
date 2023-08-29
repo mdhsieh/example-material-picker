@@ -42,17 +42,16 @@ private val DATE_FRAGMENT_TAG = "date_picker_frag"
 
 // Extend AppCompatActivity instead of ComponentActivity.
 // AppCompatActivity extends FragmentActivity which extends ComponentActivity.
-// class MainActivity : ComponentActivity() {
 class MainActivity : AppCompatActivity() {
-
-    private val shouldShowTimePicker = mutableStateOf(false)
-    private val shouldShowDatePicker = mutableStateOf(false)
-    private val selectedDate = mutableStateOf(LocalDate.now())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
+            var shouldShowTimePicker by remember { mutableStateOf(false) }
+            var shouldShowDatePicker by remember { mutableStateOf(false) }
+            var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+
             ExampleMaterialTimePickerTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
@@ -60,20 +59,38 @@ class MainActivity : AppCompatActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        CreateMaterialTimePickerCheckbox(shouldShowTimePicker)
-                        if (shouldShowTimePicker.value) {
-                            CreateMaterialTimePicker(shouldShowTimePicker)
+                        CreateMaterialTimePickerCheckbox(
+                            showTimePicker = shouldShowTimePicker,
+                            onCheckboxChanged = { newValue ->
+                                shouldShowTimePicker = newValue
+                            }
+                        )
+                        if (shouldShowTimePicker) {
+                            CreateMaterialTimePicker(
+                                showTimePicker = shouldShowTimePicker,
+                                onTimeSelected = { newValue ->
+                                    shouldShowTimePicker = newValue
+                                }
+                            )
                         }
-                        CreateMaterialDatePickerCheckbox(shouldShowDatePicker)
-                        if (shouldShowDatePicker.value) {
+                        CreateMaterialDatePickerCheckbox(
+                            showDatePicker = shouldShowDatePicker,
+                            onCheckboxChanged = { newValue ->
+                                shouldShowDatePicker = newValue
+                            }
+                        )
+                        if (shouldShowDatePicker) {
                             BasicTextField(
-                                value = selectedDate.value.toString(),
+                                value = selectedDate.toString(),
                                 onValueChange = { /* Handle text input here */ }
                             )
 
-                            CreateMaterialDatePicker(shouldShowDatePicker, selectedDate) {
-                                selectedDate.value = it
-                            }
+                            CreateMaterialDatePicker(
+                                selectedDate = selectedDate,
+                                onDateSelected = { date ->
+                                    selectedDate = date
+                                }
+                            )
                         }
                     }
                 }
@@ -83,13 +100,16 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-fun CreateMaterialTimePickerCheckbox(showTimePicker: MutableState<Boolean>) {
+fun CreateMaterialTimePickerCheckbox(
+    showTimePicker: Boolean,
+    onCheckboxChanged: (Boolean) -> Unit
+) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
         Checkbox(
             modifier = Modifier.scale(scale = 1.6f),
-            checked = showTimePicker.value,
+            checked = showTimePicker,
             onCheckedChange = { isChecked ->
-                showTimePicker.value = isChecked
+                onCheckboxChanged(isChecked)
             }
         )
 
@@ -101,13 +121,16 @@ fun CreateMaterialTimePickerCheckbox(showTimePicker: MutableState<Boolean>) {
 }
 
 @Composable
-fun CreateMaterialDatePickerCheckbox(showDatePicker: MutableState<Boolean>) {
+fun CreateMaterialDatePickerCheckbox(
+    showDatePicker: Boolean,
+    onCheckboxChanged: (Boolean) -> Unit
+) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
         Checkbox(
             modifier = Modifier.scale(scale = 1.6f),
-            checked = showDatePicker.value,
+            checked = showDatePicker,
             onCheckedChange = { isChecked ->
-                showDatePicker.value = isChecked
+                onCheckboxChanged(isChecked)
             }
         )
 
@@ -119,7 +142,7 @@ fun CreateMaterialDatePickerCheckbox(showDatePicker: MutableState<Boolean>) {
 }
 
 @Composable
-fun CreateMaterialTimePicker(showTimePicker: MutableState<Boolean>) {
+fun CreateMaterialTimePicker(showTimePicker: Boolean, onTimeSelected: (Boolean) -> Unit) {
     // Get the current Activity from the Composable
     val context: Context = LocalContext.current
     val activity = context as? AppCompatActivity
@@ -136,17 +159,17 @@ fun CreateMaterialTimePicker(showTimePicker: MutableState<Boolean>) {
             .setMinute(current.minute)
             .setTitleText("Time of the meeting")
             .build().apply {
-                addOnCancelListener { showTimePicker.value = false }
-                addOnDismissListener { showTimePicker.value = false }
+                addOnCancelListener { onTimeSelected(false) }
+                addOnDismissListener { onTimeSelected(false) }
                 addOnPositiveButtonClickListener {
                     Toast.makeText(
                         context,
                         "Selected time: $hour : $minute",
                         Toast.LENGTH_SHORT
                     ).show()
-                    showTimePicker.value = false
+                    onTimeSelected(true)
                 }
-                addOnNegativeButtonClickListener { showTimePicker.value = false }
+                addOnNegativeButtonClickListener { onTimeSelected(false) }
             }
             .show(activity.supportFragmentManager, TIME_FRAGMENT_TAG)
 
@@ -156,16 +179,14 @@ fun CreateMaterialTimePicker(showTimePicker: MutableState<Boolean>) {
 }
 
 @Composable
-//fun CreateMaterialDatePicker(selectedDate: LocalDate, onDateSelected: (LocalDate) -> Unit) {
-fun CreateMaterialDatePicker(showDatePicker: MutableState<Boolean>, selectedDate: MutableState<LocalDate>, onDateSelected: (LocalDate) -> Unit) {
+fun CreateMaterialDatePicker(selectedDate: LocalDate, onDateSelected: (LocalDate) -> Unit) {
     val context: Context = LocalContext.current
     val activity = context as? AppCompatActivity
 
     val datePicker = MaterialDatePicker.Builder.datePicker()
         .setTitleText("Select Date")
         // Convert to milliseconds
-//        .setSelection(selectedDate.value.toEpochDay() * 24 * 60 * 60 * 1000)
-        .setSelection(selectedDate.value.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000)
+        .setSelection(selectedDate.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000)
         .build()
 
     Button(
@@ -187,13 +208,17 @@ fun CreateMaterialDatePicker(showDatePicker: MutableState<Boolean>, selectedDate
 @Preview(showBackground = true)
 @Composable
 fun PickerCheckboxPreview() {
-    val shouldShowTimePicker = mutableStateOf(false)
-   val shouldShowDatePicker = mutableStateOf(false)
+    var shouldShowTimePicker by remember { mutableStateOf(false) }
+    var shouldShowDatePicker by remember { mutableStateOf(false) }
 
     ExampleMaterialTimePickerTheme {
         Column(modifier = Modifier.padding(16.dp)) {
-            CreateMaterialTimePickerCheckbox(shouldShowTimePicker)
-            CreateMaterialDatePickerCheckbox(shouldShowDatePicker)
+            CreateMaterialTimePickerCheckbox(shouldShowTimePicker, onCheckboxChanged = { newValue ->
+                shouldShowTimePicker = newValue
+            })
+            CreateMaterialDatePickerCheckbox(shouldShowDatePicker, onCheckboxChanged = { newValue ->
+                shouldShowDatePicker = newValue
+            })
         }
     }
 }
