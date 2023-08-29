@@ -86,9 +86,10 @@ fun AppContent(fragmentManager: FragmentManager) {
             }
             ShowMaterialTimePicker(
                 showTimePicker = showTimePicker,
-                selectedDateTime = LocalDateTime.now(),
+                selectedDateTime = selectedDateTime,
                 onTimeSelected = {
-                    /* Handle selected time */
+                    selectedDateTime = it
+                    showTimePicker = false
                  },
                 fragmentManager = fragmentManager
             )
