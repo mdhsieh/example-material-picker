@@ -1,6 +1,8 @@
 package com.example.examplematerialtimepicker
 
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Column
@@ -15,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentManager
@@ -37,23 +40,20 @@ private val DATE_FRAGMENT_TAG = "date_picker_frag"
 // Extend AppCompatActivity instead of ComponentActivity.
 // AppCompatActivity extends FragmentActivity which extends ComponentActivity.
 class MainActivity : AppCompatActivity() {
-    private fun AppCompatActivity.getCurrentFragmentManager(): FragmentManager {
-        return supportFragmentManager
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             ExampleMaterialTimePickerTheme {
-                AppContent(fragmentManager = getCurrentFragmentManager())
+                AppContent()
             }
         }
     }
 }
 
 @Composable
-fun AppContent(fragmentManager: FragmentManager) {
+fun AppContent() {
     var showTimePicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
@@ -80,8 +80,7 @@ fun AppContent(fragmentManager: FragmentManager) {
                 onTimeSelected = {
                     selectedDateTime = it
                     showTimePicker = false
-                 },
-                fragmentManager = fragmentManager
+                 }
             )
 
 
@@ -103,8 +102,7 @@ fun AppContent(fragmentManager: FragmentManager) {
                 onDateSelected = {
                     selectedDate = it
                     showDatePicker = false
-                },
-                fragmentManager = fragmentManager
+                }
             )
 
     }
@@ -142,20 +140,22 @@ fun DatePickerCheckbox(
 fun ShowMaterialTimePicker(
     showTimePicker: Boolean,
     selectedDateTime: LocalDateTime,
-    onTimeSelected: (LocalDateTime) -> Unit,
-    fragmentManager: FragmentManager // Pass the supportFragmentManager as a parameter
+    onTimeSelected: (LocalDateTime) -> Unit
 ) {
     if (showTimePicker) {
+        val activity = getActivity()
+
         val timePickerDialog = MaterialTimePicker.Builder()
             .setTimeFormat(TimeFormat.CLOCK_12H)
             .setHour(selectedDateTime.hour)
             .setMinute(selectedDateTime.minute)
             .build()
 
-        timePickerDialog.show(fragmentManager, TIME_FRAGMENT_TAG)
+        timePickerDialog.show(activity.supportFragmentManager, TIME_FRAGMENT_TAG)
         timePickerDialog.addOnPositiveButtonClickListener {
             val selectedTime = LocalTime.of(timePickerDialog.hour, timePickerDialog.minute)
             val newDateTime = selectedDateTime.with(selectedTime)
+            Toast.makeText(activity, "Time is: $newDateTime", Toast.LENGTH_SHORT).show()
             onTimeSelected(newDateTime)
         }
     }
@@ -165,10 +165,11 @@ fun ShowMaterialTimePicker(
 fun ShowMaterialDatePicker(
     showDatePicker: Boolean,
     selectedDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit,
-    fragmentManager: FragmentManager
+    onDateSelected: (LocalDate) -> Unit
 ) {
     if (showDatePicker) {
+
+        val activity = getActivity()
 
         val datePicker = MaterialDatePicker.Builder.datePicker()
             .setSelection(selectedDate.toEpochDay() * 24 * 60 * 60 * 1000)
@@ -176,12 +177,20 @@ fun ShowMaterialDatePicker(
             .build()
 
         datePicker.addOnPositiveButtonClickListener { millis ->
-            val selectedLocalDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+            Log.d(TAG, "millis is $millis")
+            val selectedLocalDate = Instant.ofEpochMilli(millis).atZone(ZoneId.of("UTC")).toLocalDate()
+            Toast.makeText(activity, "Date is: $selectedLocalDate", Toast.LENGTH_SHORT).show()
             onDateSelected(selectedLocalDate)
         }
 
-        datePicker.show(fragmentManager, DATE_FRAGMENT_TAG)
+        datePicker.show(activity.supportFragmentManager, DATE_FRAGMENT_TAG)
     }
+}
+
+@Composable
+fun getActivity(): AppCompatActivity {
+    val context = LocalContext.current
+    return context as AppCompatActivity
 }
 
 @Preview(showBackground = true)
