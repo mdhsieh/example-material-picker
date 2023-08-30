@@ -34,8 +34,8 @@ import java.time.format.DateTimeFormatter
 
 
 private val TAG = "MainActivity"
-private val TIME_FRAGMENT_TAG = "time_picker_frag"
-private val DATE_FRAGMENT_TAG = "date_picker_frag"
+private const val TIME_FRAGMENT_TAG = "time_picker_frag"
+private const val DATE_FRAGMENT_TAG = "date_picker_frag"
 
 // Extend AppCompatActivity instead of ComponentActivity.
 // AppCompatActivity extends FragmentActivity which extends ComponentActivity.
@@ -72,7 +72,7 @@ fun AppContent() {
                         showTimePicker = newValue
                     }
                 )
-                Text("Selected Time: ${selectedDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+                Text("Selected Time: ${getFormattedTime(selectedDateTime)}")
             }
             ShowMaterialTimePicker(
                 showTimePicker = showTimePicker,
@@ -94,7 +94,7 @@ fun AppContent() {
                         showDatePicker = newValue
                     }
                 )
-                Text("Selected Date: ${selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}")
+                Text("Selected Date: ${getFormattedDate(selectedDate)}")
             }
             ShowMaterialDatePicker(
                 showDatePicker = showDatePicker,
@@ -155,7 +155,7 @@ fun ShowMaterialTimePicker(
         timePickerDialog.addOnPositiveButtonClickListener {
             val selectedTime = LocalTime.of(timePickerDialog.hour, timePickerDialog.minute)
             val newDateTime = selectedDateTime.with(selectedTime)
-            Toast.makeText(activity, "Time is: $newDateTime", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, "Time is: ${getFormattedTime(newDateTime)}", Toast.LENGTH_SHORT).show()
             onTimeSelected(newDateTime)
         }
     }
@@ -177,9 +177,8 @@ fun ShowMaterialDatePicker(
             .build()
 
         datePicker.addOnPositiveButtonClickListener { millis ->
-            Log.d(TAG, "millis is $millis")
             val selectedLocalDate = Instant.ofEpochMilli(millis).atZone(ZoneId.of("UTC")).toLocalDate()
-            Toast.makeText(activity, "Date is: $selectedLocalDate", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, "Date is: ${getFormattedDate(selectedLocalDate)}", Toast.LENGTH_SHORT).show()
             onDateSelected(selectedLocalDate)
         }
 
@@ -193,6 +192,14 @@ fun getActivity(): AppCompatActivity {
     return context as AppCompatActivity
 }
 
+fun getFormattedTime(dateTime: LocalDateTime): String {
+    return dateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+}
+
+fun getFormattedDate(date: LocalDate): String {
+    return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PickerCheckboxPreview() {
@@ -203,20 +210,24 @@ fun PickerCheckboxPreview() {
     var selectedDateTime by remember { mutableStateOf(LocalDateTime.now()) }
 
     ExampleMaterialTimePickerTheme {
-        TimePickerCheckbox(
-            showTimePicker = showTimePicker,
-            onShowTimePickerChanged = { newValue ->
-                showTimePicker = newValue
-            }
-        )
-        Text("Selected Time: ${selectedDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            TimePickerCheckbox(
+                showTimePicker = showTimePicker,
+                onShowTimePickerChanged = { newValue ->
+                    showTimePicker = newValue
+                }
+            )
+            Text("Selected Time: ${getFormattedTime(selectedDateTime)}")
 
-        DatePickerCheckbox(
-            showDatePicker = showDatePicker,
-            onShowDatePickerChanged = { newValue ->
-                showDatePicker = newValue
-            }
-        )
-        Text("Selected Date: $selectedDate")
+            DatePickerCheckbox(
+                showDatePicker = showDatePicker,
+                onShowDatePickerChanged = { newValue ->
+                    showDatePicker = newValue
+                }
+            )
+            Text("Selected Date: ${getFormattedDate(selectedDate)}")
+        }
     }
 }
